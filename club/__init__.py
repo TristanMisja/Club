@@ -263,7 +263,7 @@ def fancyprint(*args, sep: str = ' ', start: str = '', end: str = '\n', fore: st
         color = ''
     
     for arg in args:
-        arg = arg.split(' ')
+        arg = str(arg).split(' ')
         for argument in arg:
             args2.append(argument)
     
@@ -401,7 +401,7 @@ def cleanmemory():
     sys.__stderr__.flush()
 
     gc.unfreeze()
-    for obj in gc.get_objects(generation=None):
+    for obj in gc.get_objects():
         del obj
 
     gc.collect(2)
@@ -908,7 +908,7 @@ class Logger(object):
         return logged_text
     
     def log(self, text):
-        log = _parse_format(self):
+        log = _parse_format(self)
         log += str(text)
         self.file.write(log)
         self.file.flush()
@@ -918,3 +918,5 @@ class Logger(object):
     
     def get_log_history(self):
         return self.logged_text
+
+fancyprint("Hello, I'm", 69, "years old", sep="\n", case="leetcase")
