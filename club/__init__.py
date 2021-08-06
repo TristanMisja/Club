@@ -6,9 +6,11 @@ import subprocess
 import termios
 import fnmatch
 import pathlib
+import pickle
 import struct
 import random
 import fcntl
+import time
 import tty
 import sys
 import os
@@ -55,7 +57,10 @@ def safe_quit(message=''):
         sys.stderr.flush()
 
     childpidlist = []
-    out = str(subprocess.check_output(['sudo','ps','--ppid',str(os.getpid())],stdin=subprocess.PIPE,stderr=subprocess.PIPE))
+    try:
+        out = str(subprocess.check_output(['sudo','ps','--ppid',str(os.getpid())],stdin=subprocess.PIPE,stderr=subprocess.PIPE))
+    except FileNotFoundError:
+        out = str(subprocess.check_output(['ps','--ppid',str(os.getpid())],stdin=subprocess.PIPE,stderr=subprocess.PIPE))
     out = '\n'.split(out)
     out.pop(0)
     for cpidinfo in out:
@@ -236,6 +241,12 @@ def clearlines(lines=1):
         sys.stdout.flush()
 
 
+def clearline():
+    sys.stdout.write('\x1b[1A')
+    sys.stdout.write('\x1b[2K')
+    sys.stdout.flush()
+
+
 def fancyprint(*args, sep: str = ' ', start: str = '', end: str = '\n', fore: str = '', back: str = '', color: str = '\33[0m', case: str = 'normal', file=sys.stdout, **kwargs):
     """
     An very improved version of print().
@@ -251,9 +262,9 @@ def fancyprint(*args, sep: str = ' ', start: str = '', end: str = '\n', fore: st
         try:
             file.write(b'')
         except io.UnsupportedOperation:
-            file = open(os.readlink('/proc/' + str(os.getpid()) + '/fd/' + str(fd.fileno())),'w')
+            file = open(os.readlink('/proc/' + str(os.getpid()) + '/fd/' + str(file.fileno())),'w')
     except io.UnsupportedOperation:
-        file = open(os.readlink('/proc/' + str(os.getpid()) + '/fd/' + str(fd.fileno())),'w')
+        file = open(os.readlink('/proc/' + str(os.getpid()) + '/fd/' + str(file.fileno())),'w')
     
     if fore == '' or back == '':
         if fore == '':
@@ -409,9 +420,9 @@ def cleanmemory():
     gc.collect(0)
 
 
-def quit(message=None):
+def exit(message=None):
     """
-    Used to exit the program.
+    Raises SystemExit() to exit the program.
     """
     if message in [None,'null',0]:
         raise SystemExit
@@ -440,7 +451,7 @@ def center_text(text):
     be centered in the terminal.
     """
     space_count = (os.get_terminal_size().columns / 2) - (len(str(text)) / 2)
-    spaces = (' ' * space_count)
+    spaces = (' ' * int(round(space_count, 0)))
     return spaces + str(text)
 
 
@@ -450,7 +461,7 @@ def Stack(object):
     """
     def __init__(self, start=[]):
         self.stack = []
-        for x in stack:
+        for x in self.stack:
             self.push(x)
         self.reverse()
         
@@ -649,7 +660,7 @@ class KeyedEmptyNode(object):
 
 
 class KeyedBinaryNode(object):
-    def __init__(self, left, value, right):
+    def __init__(self, left, key, value, right):
         self.val, self.key, self.left, self.right = value, key, left, right
         
     def lookup(self, key):
@@ -732,7 +743,7 @@ class ArgumentParser(object):
             for name in opt[0]:
                 if name in self.args:
                     option = opt[2](sys.argv[sys.argv.index(name)+1])
-                    out["opts"][opt[1]] = options
+                    out["opts"][opt[1]] = option
                 elif '=' in name:
                     tmp = name.split('=')
                     if tmp[2] in self.args:
@@ -771,6 +782,10 @@ def encode_str(string):
 
 
 class DevNull(object):
+    """
+    This class is essentially a trash bin class. You
+    can use it as a substitute for most i/o streams.
+    """
     def __init__(self):
         if sys.platform in ['dos','win16']:
             self.nullfp = r'C:\DEV\NUL'
@@ -778,14 +793,20 @@ class DevNull(object):
             self.nullfp = r'C:\\Device\Null'
         else:
             self.nullfp = '/dev/null'
-    
+
+    def __enter__(self):
+        self.__init__()
+
+    def __exit__(self):
+        self.close()
+
     def write(self,data):
         if type(data) == str:
             with open(self.nullfp,'w') as fd:
-                fd.write(data)
+                fd.write(pickle.dumps(data))
         else:
             with open(self.nullfp,'wb') as fd:
-                fd.write(data)
+                fd.write(pickle.dumps(data))
                 
     def read(self,bytenum):
         return ''
@@ -827,24 +848,24 @@ def glob(root, pattern):
             yield os.path.join(base, filename)
 
 
-def execute(cmd, verbose=False):
-    """
-    Executes shell command.
-    """
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out = []
-    while 1:
-        line = p.stdout.readline()
-        out.append(line)
-        if verbose:
-            print(line)
-        if not line and p.poll() is not None:
-            break
-    if p.returncode != 0:
-        print(p.stderr.read().strip())
-        return 1
-    else:
-        return ''.join(out).strip()
+# def execute(cmd, verbose=False):
+#     """
+#     Executes shell command.
+#     """
+#     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#     out = []
+#     while 1:
+#         line = p.stdout.readline()
+#         out.append(line)
+#         if verbose:
+#             print(line)
+#         if not line and p.poll() is not None:
+#             break
+#     if p.returncode != 0:
+#         print(p.stderr.read().strip())
+#         return 1
+#     else:
+#         return ''.join(out).strip()
 
 
 # def daemonize():
@@ -905,10 +926,10 @@ class Logger(object):
             self.file.close()
         else:
             self.file.flush()
-        return logged_text
+        return self.logged_text
     
     def log(self, text):
-        log = _parse_format(self)
+        log = self._parse_format(self)
         log += str(text)
         self.file.write(log)
         self.file.flush()
@@ -918,5 +939,3 @@ class Logger(object):
     
     def get_log_history(self):
         return self.logged_text
-
-fancyprint("Hello, I'm", 69, "years old", sep="\n", case="leetcase")
