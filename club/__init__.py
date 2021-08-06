@@ -1,15 +1,11 @@
-#!/bin/python3
 # -*- coding: utf-8 -*-
 
 from enum import Enum
 import subprocess
 import termios
 import fnmatch
-import pathlib
 import pickle
-import struct
 import random
-import fcntl
 import time
 import tty
 import sys
@@ -19,6 +15,7 @@ import io
 
 __authors__ = ("Tristan S. Misja")
 __version__ = "1.0.0"
+__build__ = ""
 __license__ = "MIT"
 __copyright__ = "Copyright © 2021 Tristan S. Misja"
 __credits__ = []
@@ -26,6 +23,9 @@ __maintainer__ = "Tristan S. Misja"
 __email__ = "TristanMisja09@gmail.com"
 __status__ = "Release"
 __doc__ = None
+__title__ = "club"
+__docformat__ = 'restructuredtext'
+__build__ = 0x010000
 
 class CommandlineError(OSError):
     pass
@@ -183,7 +183,8 @@ class Foreground(Enum):
     GRAY = '\33[90m'
     GREY = '\33[90m'
     WHITE = '\33[97m'
-    RESET = '\33[0m'
+    RESET = '\033[0m'
+    CLEAR = RESET
 
 
 class Background(Enum):
@@ -205,7 +206,8 @@ class Background(Enum):
     GRAY = '\33[100m'
     GREY = '\33[100m'
     WHITE = '\33[47m'
-    RESET = '\33[0m'
+    RESET = '\033[0m'
+    CLEAR = RESET
 
 
 class Effects():
@@ -216,19 +218,21 @@ class Effects():
     NEGATIVE = '\33[7m'
     ERROR = '\33[5m\33[6m\33[91m'
     BOLD = '\x1b[1m'
+    THICK = BOLD
     FAINT = '\x1b[2m'
+    DIM = FAINT
     CROSS = '\x1b[9m'
-    RESET = '\33[0m'
+    TITLE = '\033]2;'
+    NORMAL = '\033[22m'
+    RESET = '\033[0m'
+    CLEAR = RESET
 
 
 def cls():
     """
     Clears the console.
     """
-    for _ in range(os.get_terimal_size().rows):
-        sys.stdout.write('\x1b[1A')
-        sys.stdout.write('\x1b[2K')
-    sys.stdout.flush()
+    sys.stdout.write("\033[2J")
 
 
 def clearlines(lines=1):
@@ -404,20 +408,26 @@ def fancyprint(*args, sep: str = ' ', start: str = '', end: str = '\n', fore: st
     return text
 
 def cleanmemory():
-    sys.stdout.flush()
-    sys.__stdout__.flush()
-    sys.stdin.flush()
-    sys.__stdin__.flush()
-    sys.stderr.flush()
-    sys.__stderr__.flush()
+    try:
+        sys.stdout.flush()
+        sys.__stdout__.flush()
+        sys.stdin.flush()
+        sys.__stdin__.flush()
+        sys.stderr.flush()
+        sys.__stderr__.flush()
 
-    gc.unfreeze()
-    for obj in gc.get_objects():
-        del obj
+        gc.unfreeze()
+        for obj in gc.get_objects():
+            del obj
 
-    gc.collect(2)
-    gc.collect(1)
-    gc.collect(0)
+        gc.collect(2)
+        gc.collect(1)
+        gc.collect(0)
+
+    except Exception as err:
+        return -1, err
+
+    return 1
 
 
 def exit(message=None):
@@ -726,7 +736,19 @@ class ArgumentParser(object):
         self.arguments = []
         self.options = []
         self.help = []
-        
+
+    def __getitem__(self, i):
+        try:
+            return self.all[i]
+        except IndexError:
+            return None
+
+    def __len__(self):
+        return len(self.args)
+
+    def __repr__(self):
+        return '<ArgumentParser %s>' % (repr(self._args))
+
     def add_argument(self, names: list, dest):
         self.arguments.append([names, dest])
         

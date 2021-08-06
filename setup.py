@@ -8,17 +8,17 @@ README = (HERE / "README.rst").read_text()
 REQUIREMENTS = open('requirements.txt','r').read().split('\n')
 
 setup(
-    name="Club",
+    name="club",
     version="1.0.0",
     description="Command Line Utility Belt",
     long_description=README,
     long_description_content_type="text/x-rst",
-    url="https://github.com/TristanMisja/Seasoning",
-    download_url="https://github.com/TristanMisja/Seasoning",
-    author="Tristan Misja",
-    author_email="TristanMisja@gmail.com",
-    maintainer="Tristan Misja",
-    maintainer_email="TristanMisja@gmail.com",
+    url="https://github.com/TristanMisja/Club",
+    download_url="https://github.com/TristanMisja/Club",
+    author="Tristan S. Misja",
+    author_email="TristanMisja09@gmail.com",
+    maintainer="Tristan S. Misja",
+    maintainer_email="TristanMisja09@gmail.com",
     license="MIT",
     classifiers=[
         "License :: OSI Approved :: MIT License",
@@ -43,7 +43,7 @@ setup(
     include_package_data=True,
     install_requires=REQUIREMENTS,
     requires=REQUIREMENTS,
-    provides=["Club"],
+    provides=["club"],
     zip_safe=False,
     entry_points={},
     project_urls={
