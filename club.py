@@ -23,12 +23,38 @@ __maintainer__ = "Tristan S. Misja"
 __email__ = "TristanMisja09@gmail.com"
 __status__ = "Release"
 __doc__ = None
-__title__ = "club"
+__title__ = "Club"
 __docformat__ = 'restructuredtext'
 __build__ = 0x010000
+__homepage__ = 'https://github.com/TristanMisja/Club'
 
 class CommandlineError(OSError):
     pass
+
+
+def is_color_supported(file=sys.stdout):
+    """
+    Returns true if color in supported by stdout/the given filestream
+    """
+    if not hasattr(file, 'isatty'):
+        return False
+
+    if not file.isatty() and 'TERMINAL-COLOR' not in os.environ:
+        return False
+
+    if sys.platform in ['win32','win64','nt','windows']:
+        try:
+            import colorama
+            colorama.init()
+            return True
+        except ImportError:
+            return False
+
+    if 'COLORTERM' in os.environ:
+        return True
+
+    term = os.environ.get('TERM', 'dumb').lower()
+    return term in ('xterm', 'linux') or 'color' in term
 
 
 def quit(message=''):
@@ -43,6 +69,62 @@ def quit(message=''):
         sys.stderr.write(message)
         sys.stderr.flush()
     os.kill(os.getpid(), 9)
+
+
+def platform():
+    if sys.platform.lower() in ['win16', 'win32', 'win64', 'win', 'nt', 'msys']:
+        return "Windows"
+
+    elif sys.platform.lower() in ['dos', 'msdos', 'dosbox', 'freedos']:
+        return "DOS"
+
+    elif sys.platform.lower() in ['os2', 'os2emx']:
+        return "OS/2"
+
+    elif sys.platform.lower() in ['rasp', 'raspbian', 'linux', 'linux1', 'linux2', 'linux3', 'cygwin']:
+        return "Linux"
+
+    elif sys.platform.lower() in ['mac', 'osx', 'darwin']:
+        return "Macintosh"
+
+    elif sys.platform.lower() in ['riscos']:
+        return "RiscOS"
+
+    elif sys.platform.lower() in ['atheos']:
+        return "AtheOS"
+
+    elif sys.platform.lower() in ['freebsd5', 'freebsd6', 'freebsd7', 'freebsd8', "freebsd", 'freebsdn', 'freebsd9', 'freebsd10', 'freebsd11', 'freebsd12', 'freebsd4', 'freebsd3', 'freebsd2']:
+        return "FreeBSD"
+
+    elif sys.platform.lower() in ['openbsd4', 'openbsd5', 'openbsd6', 'openbsd']:
+        return "OpenBSD"
+
+    elif sys.platform.lower() in ['aix', 'aix3', 'aix4']:
+        return "AIX"
+
+    elif sys.platform.lower() in ['netbsd', 'netbsd1', 'netbsd2', 'netbsd3', 'netbsd4', 'netbsd5', 'netbsd6', 'netbsd7', 'netbsd8', 'netbsd9']:
+        return "NetBSD"
+
+    elif sys.platform.lower() in ['irix', 'irix5', 'irix6']:
+        return "Irix"
+    
+    elif sys.platform.lower() in ['unixware7', 'unixware6', 'unixware']:
+        return "UnixWare"
+
+    elif sys.platform.lower() in ['unix', 'nix']:
+        return "Unix"
+
+    elif sys.platform.lower() in ['next3', 'next2', 'next1', 'next']:
+        return "NeXT"
+
+    elif sys.platform.lower() in ['sunos', 'sunos3', 'sunos4', 'sunos5', 'solaris']:
+        return "Sun OS"
+
+    elif sys.platform.lower() in ['beos5', 'beos4', 'beos']:
+        return "BeOS"
+
+    elif sys.platform.lower() in ['generic', 'none', 'null', 'unknown', 'other']:
+        return "Unknown"
 
 
 def safe_quit(message=''):
@@ -103,33 +185,33 @@ def getch():
     return ord(ch)
 
 
-# def getchar():
-#     """
-#     Returns key when one is pressed.
-#    """
-#     keycode = getch()
-# 
-#     special = {
-#         127: 'backspace',
-#         32: 'space',
-#         9: 'tab',
-#         27: 'esc',
-#         65: 'arrow_up',
-#         66: 'arrow_down',
-#         67: 'arrow_right',
-#         68: 'arrow_left',
-#         13: 'enter',
-#         20: 'caps_lock',
-#         17: 'ctrl',
-#         16: 'shift'
-#     }
-# 
-#     if keycode in special.keys():
-#         ch = special[keycode]
-#     else:
-#         ch = chr(keycode)
-#
-#     return ch
+def getchar():
+    """
+    Returns key when one is pressed.
+    """
+    keycode = getch()
+
+    special = {
+        127: 'backspace',
+        32: 'space',
+        9: 'tab',
+        27: 'esc',
+        65: 'arrow_up',
+        66: 'arrow_down',
+        67: 'arrow_right',
+        68: 'arrow_left',
+        13: 'enter',
+        20: 'caps_lock',
+        17: 'ctrl',
+        16: 'shift'
+    }
+
+    if keycode in special.keys():
+        ch = special[keycode]
+    else:
+        ch = chr(keycode)
+
+    return ch
 
 
 def getpass(prompt: str = "Password: ", mask: str = ''):
@@ -289,7 +371,10 @@ def fancyprint(*args, sep: str = ' ', start: str = '', end: str = '\n', fore: st
             string = string.replace(',','').replace('-','').replace('\'','').replace('\"','').replace('<','').replace('>','').replace('_','').replace('!','').replace('?','').replace('$','').replace('%','').replace('@','').replace('^','').replace('&','').replace('*','').replace('`','').replace('~','').replace('\\','').replace('/','').replace('{','').replace('}','').replace('[','').replace(']','').replace(':','').replace(';','').replace('+','').replace('=','')
             joinlist.append(string[0].upper() + string[1::])
                 
-        text = str(color + fore + back + start + ''.join(joinlist) + end + '\33[0m')
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + ''.join(joinlist) + end + '\33[0m')
     
     elif case in ['train','traincase','train-case']:
         joinlist = [args[0][0].upper() + args2[0][1::]]
@@ -298,7 +383,11 @@ def fancyprint(*args, sep: str = ' ', start: str = '', end: str = '\n', fore: st
                 continue
             else:
                 joinlist.append(string.lower())
-        text = str(color + fore + back + start + '-'.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + '-'.join(joinlist) + end + '\33[0m')
     
     elif case in ['sentence','sentencecase','sentence-case']:
         joinlist = [args[0][0].upper() + args2[0][1::]]
@@ -307,67 +396,111 @@ def fancyprint(*args, sep: str = ' ', start: str = '', end: str = '\n', fore: st
                 continue
             else:
                 joinlist.append(string)
-        text = str(color + fore + back + start + ' '.join(joinlist) + end + '\33[0m')
-    
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + ' '.join(joinlist) + end + '\33[0m')
+
     elif case in ['leet','leetcase','leet-case']:
         joinlist = []
         for string in args2:
             joinlist.append(string.replace('e','3').replace('E','3').replace('i','1').replace('I','1').replace('s','5').replace('S','5').replace('z','2').replace('Z','2').replace('a','4').replace('A','4').replace('b','8').replace('B','8').replace('o','0').replace('O','0'))
-        text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
     
     elif case in ['pascal','pascalcase','pascal-case','capitalcamel','capital-camel','capitalcamel-case','capital-camelcase','capital-camel-case','capitalcamelcase']:
         joinlist = []
         for string in args2:
             joinlist.append(string[0].upper() + string[1::])
-        text = str(color + fore + back + start + ''.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + ''.join(joinlist) + end + '\33[0m')
     
     elif case in ['snake','snakecase','snake-case','snake_case','c','ccase','c-case','c_case']:
         joinlist = []
         for arg in args2:
             joinlist.append(arg.lower())
-        text = str(color + fore + back + start + '_'.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + '_'.join(joinlist) + end + '\33[0m')
     
     elif case in ['flat','flatcase','flat-case']:
         joinlist = []
         for arg in args2:
             joinlist.append(arg.lower())
-        text = str(color + fore + back + start + ''.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + ''.join(joinlist) + end + '\33[0m')
     
     elif case in ['spinal','spinalcase','spinal-case','hyphen','hyphencase','hyphen-case','dash','dashcase','dash-case']:
         joinlist = []
         for arg in args2:
             joinlist.append()
-        text = str(color + fore + back + start + '-'.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + '-'.join(joinlist) + end + '\33[0m')
     
     elif case in ['macro','macrocase','macro-case']:
         joinlist = []
         for arg in args2:
             joinlist.append(arg.upper())
-        text = str(color + fore + back + start + '_'.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + "_".join(joinlist) + end + '\33[0m')
     
     elif case in ['cobol','cobolcase','cobol-case']:
         joinlist = []
         for arg in args2:
             joinlist.append(arg.upper())
-        text = str(color + fore + back + start + '-'.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + '-'.join(joinlist) + end + '\33[0m')
     
     elif case in ['kebab','kebabcase','kebab-case','lisp','lispcase','lisp-case','css','csscase','css-case']:
         joinlist = []
         for arg in args2:
             joinlist.append(arg.lower())
-        text = str(color + fore + back + start + '-'.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + '-'.join(joinlist) + end + '\33[0m')
     
     elif case in ['upper','uppercase','upper-case']:
         joinlist = []
         for string in args2:
             joinlist.append(string.upper())
-        text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
     
     elif case in ['lower','lowercase','lower-case']:
         joinlist = []
         for string in args2:
             joinlist.append(string.lower())
-        text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
     
     elif case in ['random','randomcase','random-case']:
         joinlist = []
@@ -378,7 +511,11 @@ def fancyprint(*args, sep: str = ' ', start: str = '', end: str = '\n', fore: st
                 secondjoinlist.append(char)
             temp = ''.join(secondjoinlist)
             joinlist.append(temp)
-        text = str(color + fore + back + start + sep.join(args2) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(args2) + end)
+        else:    
+            text = str(color + fore + back + start + sep.join(args2) + end + '\33[0m')
     
     elif case in ['sticky','stickycase','sticky-case','studly','studlycase','studly-case']:
         joinlist = []
@@ -392,13 +529,21 @@ def fancyprint(*args, sep: str = ' ', start: str = '', end: str = '\n', fore: st
                 else:
                     secondjoinlist.append(char)
             joinlist.append(''.join(secondjoinlist))
-        text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
     
     else:
         joinlist = []
         for word in args2:
             joinlist.append(''.join(word))
-        text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
+
+        if (hasattr(sys.stdout, "isatty") or hasattr(file, "isatty")) and not sys.stdout.isatty() or not file.isatty() or 'TERMINAL-COLOR' not in os.environ:
+            text = str(start + sep.join(joinlist) + end)
+        else:    
+            text = str(color + fore + back + start + sep.join(joinlist) + end + '\33[0m')
     
     file.write(color + start + text + end + '\33[0m')
     file.flush()
@@ -728,7 +873,7 @@ class ArgumentParser(object):
     
      args - Expected to be sys.argv
     """
-    def __init__(self, args):
+    def __init__(self, args: list):
         if type(args) in [tuple, list]:
             self.args = list(args)
         elif type(args) == str:
@@ -821,6 +966,9 @@ class DevNull(object):
 
     def __exit__(self):
         self.close()
+    
+    def isatty(self):
+        return False
 
     def write(self,data):
         if type(data) == str:
@@ -926,6 +1074,12 @@ class Logger(object):
         self.file = file
         self.logged_text = ''
         self.format = ''
+
+    def __enter__(self, file=sys.stdout):
+        self.__init__(file)
+
+    def __exit__(self):
+        self.close()
     
     def config(self, **kwargs):
         if 'file' in kwargs:

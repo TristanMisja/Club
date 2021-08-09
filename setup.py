@@ -8,7 +8,7 @@ README = (HERE / "README.rst").read_text()
 REQUIREMENTS = open('requirements.txt','r').read().split('\n')
 
 setup(
-    name="club",
+    name="Club",
     version="1.0.0",
     description="Command Line Utility Belt",
     long_description=README,
@@ -39,13 +39,15 @@ setup(
         "Natural Language :: English"
     ],
     keywords="cmd commandline terminal utility belt command line argument unix utilities posix bsd linux",
-    packages=['club'], # find_packages(),
+    packages=find_packages(),
     include_package_data=True,
     install_requires=REQUIREMENTS,
     requires=REQUIREMENTS,
     provides=["club"],
     zip_safe=False,
     entry_points={},
+    package_dir={"./"},
+    py_modules=["club"],
     project_urls={
         "Bug Tracker": "https://github.com/TristanMisja/Club/issues",
 #         "Documentation": "",
