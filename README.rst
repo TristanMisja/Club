@@ -16,8 +16,6 @@ Club
 
 Installation
 ============
-| Club can be installed using pip:
-| 
-| ``$ python3 -m pip install club``
-| 
-| Club so far only supports Python 3.
+| Currently, trying to build the module has
+| failed for me, so to use the library 
+| just add the club.py to you project.
