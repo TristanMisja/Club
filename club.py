@@ -13,14 +13,17 @@ import os
 import gc
 import io
 
+__deprecated__ = False
+__author__ = "Tristan S. Misja"
 __authors__ = ("Tristan S. Misja")
 __version__ = "1.0.0"
-__build__ = ""
 __license__ = "MIT"
 __copyright__ = "Copyright © 2021 Tristan S. Misja"
-__credits__ = []
+__credits__ = ["Tristan S. Misja"]
+__date__ = "8/11/2021"
 __maintainer__ = "Tristan S. Misja"
 __email__ = "TristanMisja09@gmail.com"
+__contact__ = __email__
 __status__ = "Release"
 __doc__ = None
 __title__ = "Club"
@@ -34,8 +37,11 @@ class CommandlineError(OSError):
 
 def is_color_supported(file=sys.stdout):
     """
-    Returns true if color in supported by stdout/the given filestream
+    Returns true if color in supported by stdout/the given io stream
     """
+
+    # Code from https://github.com/lepture/terminal/blob/master/terminal/color.py
+
     if not hasattr(file, 'isatty'):
         return False
 
@@ -55,6 +61,65 @@ def is_color_supported(file=sys.stdout):
 
     term = os.environ.get('TERM', 'dumb').lower()
     return term in ('xterm', 'linux') or 'color' in term
+
+
+def hex2ansi(code):
+    """
+    Convert hex code to ansi.
+    """
+
+    # Code from https://github.com/lepture/terminal/blob/master/terminal/color.py
+
+    if code.startswith('#'):
+        code = code[1:]
+
+    if len(code) == 3:
+        # efc -> eeffcc
+        return rgb2ansi(*map(lambda o: int(o * 2, 16), code))
+
+    if len(code) != 6:
+        raise ValueError('invalid color code')
+
+    rgb = (code[:2], code[2:4], code[4:])
+    return rgb2ansi(*map(lambda o: int(o, 16), rgb))
+
+
+def is_256color_supported(file=sys.stdout):
+    """
+    Returns true if stdout/the given io stream supports ansi 256 color.
+    """
+
+    # Code from https://github.com/lepture/terminal/blob/master/terminal/color.py
+
+    if not is_color_supported(file=file):
+        return False
+    term = os.environ.get('TERM', 'dumb').lower()
+    return '256' in term
+
+
+def rgb2ansi(r, g, b):
+    """
+    Converts an RGB color to 256 ansi graphics.
+    """
+
+    # Code from https://github.com/tehmaze/ansi/blob/master/ansi/colour/rgb.py
+
+    grayscale = False
+    poss = True
+    step = 2.5
+
+    while poss:
+        if min(r, g, b) < step:
+            grayscale = max(r, g, b) < step
+            poss = False
+
+        step += 42.5
+
+    if grayscale:
+        return 232 + int(float(sum((r, g, b)) / 33.0))
+
+    m = ((r, 36), (g, 6), (b, 1))
+    return 16 + sum(int(6 * float(val) / 256) * mod for val, mod in m)
 
 
 def quit(message=''):
@@ -298,6 +363,7 @@ class Effects():
     UNDERLINE = '\x1b[4m'
     OVERLINE = '\x1b[53m'
     NEGATIVE = '\33[7m'
+    INVERSE = NEGATIVE
     ERROR = '\33[5m\33[6m\33[91m'
     BOLD = '\x1b[1m'
     THICK = BOLD
